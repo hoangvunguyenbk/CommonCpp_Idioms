@@ -1,8 +1,12 @@
 # CommonCpp_Idioms
-I write this collection, notes on popular C++ technique and idioms for learning purpose.
+Notes on popular C++ techniques and idioms for learning purposes.
 
 - [SFINAE - Substitution Failure Is Not An Error](#SFINAE)
 - [PIMPL - Private Implementation](#PIMPL)
+- [CRTP - Curiously Recurring Template Pattern](#CRTP)
+- [Return Type Resolver](#ReturnTypeResolver)
+- [Tag Dispatching](#TagDispatching)
+- [RAII - Resources Acquisition Is Initialize](#RAII)
 
 
 ### SFINAE
@@ -27,7 +31,9 @@ Some of the example:
 - Specialize a function for all kind of type traits that we have.
 - std::enable_if
 
-**std::enable_if** is a set of tools, internally use SFINAE, allow to include or exclude overloads from possible function template or class template.
+**std::enable_if** 
+
+A set of tools, internally use SFINAE, allow to include or exclude overloads from possible function template or class template.
 
 Example: if passed types are arithmetic(int, long, float..) it will work and generate T, otherwise it will fail to instantiate.
 
@@ -63,7 +69,8 @@ So we have some alternative to SFINAE:
 - tag dispatching
 
 **concept**
-a concept is a set of constraints on template parameters evaluated at compile time
+
+A concept is a set of constraints on template parameters evaluated at compile time
 
 ```cpp
 //define a concept and use as the typename
@@ -91,3 +98,38 @@ auto get_value(T t) {
 
 
 ### PIMPL
+
+**Definition**
+
+C++ technique that hide implementation, to minimize coupling, separate the declaration and actual implementation. PIMPL stand for "Pointer To Implementation" or "Private Implementation".
+
+```cpp
+//class.h
+
+class PrivImp;
+class MyClass {
+
+public:
+	//...
+	void Foo();
+private:
+	PrivImp* mPriv;
+};
+
+//class.cpp
+class PrivImp {
+public:
+	void DoSomething() {};
+};
+
+MyClass::MyClass()
+:mPriv(new PrivImp()) {}
+
+MyClass::~MyClass() {
+	delete mPriv;
+}
+
+void MyClass::Foo() {
+	mPriv->DoSomething
+};
+```

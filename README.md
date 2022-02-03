@@ -84,7 +84,7 @@ foo(T t) {
 ```
 
 **constexpr if**
-the feature allows you to discard branches of an if statement at compile-time based on a constant expression condition.
+the feature allows you to discard branches of an if statement at compile-time based on MPL - Private Implementaa constant expression condition.
 
 ```cpp
 template <typename T>
@@ -103,33 +103,67 @@ auto get_value(T t) {
 
 C++ technique that hide implementation, to minimize coupling, separate the declaration and actual implementation. PIMPL stand for "Pointer To Implementation" or "Private Implementation".
 
+example taken from EffectiveCppp book:
+
 ```cpp
-//class.h
+//widget.h
 
-class PrivImp;
-class MyClass {
-
+struct Pimpl; //forward declaration
+class Widget
+{
 public:
-	//...
-	void Foo();
+	Widget();
+	~Widget();
+	Widget(const Widget& widget); //copyable
+	Widget& operator=(const Widget& widget);
+	Widget(Widget&& widget); //moveable
+	Widget& operator=(Widget&& widget);
+
 private:
-	PrivImp* mPriv;
+	std::unique_ptr<Pimpl> pImpl;
 };
 
-//class.cpp
-class PrivImp {
-public:
-	void DoSomething() {};
+//widget.cpp
+struct Pimpl {
+	std::string mString;
+	std::vector<int> mVector;
+
+	void DoSomeThing() {};
 };
 
-MyClass::MyClass()
-:mPriv(new PrivImp()) {}
+Widget::Widget()
+	:pImpl(std::make_unique<Pimpl>())
+{}
 
-MyClass::~MyClass() {
-	delete mPriv;
+Widget::~Widget() = default; // needed to make Pimpl type complete
+Widget::Widget(Widget&& widget) = default;
+Widget& Widget::operator=(Widget&& widget) = default;
+
+/* compiler not generate the default copy constructor for move - only types like std::unique_ptr, 
+so have to implement*/
+Widget::Widget(const Widget& widget) 
+	:pImpl(std::make_unique<Pimpl>(*widget.pImpl))
+{
 }
-
-void MyClass::Foo() {
-	mPriv->DoSomething
-};
+Widget& Widget::operator=(const Widget& widget)
+{
+	*pImpl = *widget.pImpl;
+	return *this;
+}
 ```
+
+**Usage**:
+
+Pimpl technique hide the implement of the class and access it via pointer, so no need to recompile entire class if header file remain the same, it will reduce the build time and also reduce the dependency from client code.
+
+Useful when apply to large class which is provide API to client.
+
+**Disadvantage**:
+
+Because it manages the implementation via pointer, so there is the need for heap memory allocation. 
+Debugging - you don’t see the details immediately, class is split
+
+**Static PIMPL/Fast PIMPL**
+
+Instead of construct private class on heap, use the placement new operator and create the object in an embedded buffer.
+https://www.cleeus.de/w/blog/2017/03/10/static_pimpl_idiom.html 
